@@ -150,7 +150,11 @@
                   <li class="list-group-item py-2">
                     {{ c.date }} — <strong>{{ c.person }}</strong> (submitted by {{ c.submitter }}) — {{ c.eggs }} eggs
                     <div class="mt-2">
-                      {% if g.user and g.user == c.person %}
+                      {% if c.get('status') == 'approved' %}
+                        <span class="badge bg-success">✓ Approved</span>
+                      {% elif c.get('status') == 'rejected' %}
+                        <span class="badge bg-danger">✗ Rejected</span>
+                      {% elif g.user and g.user == c.person %}
                         <form method="post" action="{{ url_for('consume_approve', idx=loop.index0) }}" style="display:inline-flex; gap:0.5rem; align-items:center;">
                           <button class="btn btn-sm btn-outline-success">Approve</button>
                         </form>
@@ -158,7 +162,7 @@
                           <button class="btn btn-sm btn-outline-danger">Reject</button>
                         </form>
                       {% else %}
-                        <small class="text-muted">Only the person can approve or reject</small>
+                        <small class="text-muted">Pending {{ c.person }}'s decision</small>
                       {% endif %}
                     </div>
                   </li>

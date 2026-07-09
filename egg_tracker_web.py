@@ -443,9 +443,8 @@ def consume_approve(idx):
     if user != item.get("person"):
         flash("Only the person who consumed can approve this record.", "danger")
         return redirect(url_for("index"))
-    # approve and move to confirmed
-    data.setdefault("consumptions", []).append({k: item[k] for k in ("person", "eggs", "date")})
-    pending.pop(idx)
+    # mark as approved
+    item["status"] = "approved"
     save_data(data)
     flash("Consumption approved and recorded.", "success")
     return redirect(url_for("index"))
@@ -464,9 +463,10 @@ def consume_reject(idx):
     if user != item.get("person"):
         flash("Only the person who consumed can reject this record.", "danger")
         return redirect(url_for("index"))
-    pending.pop(idx)
+    # mark as rejected
+    item["status"] = "rejected"
     save_data(data)
-    flash("Pending consumption rejected and removed.", "info")
+    flash("Pending consumption rejected.", "info")
     return redirect(url_for("index"))
 
 
