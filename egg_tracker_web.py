@@ -33,6 +33,8 @@ def load_data():
             "consumptions": [],
             "pending_purchases": [],
             "pending_consumptions": [],
+            "pending_deletions": [],
+            "admins": [],
             "reset_votes": [],
         }
 
@@ -57,6 +59,7 @@ def load_data():
             save_data(data)
         data.setdefault("pending_purchases", [])
         data.setdefault("pending_consumptions", [])
+        data.setdefault("pending_deletions", [])
         data.setdefault("admins", [])
         data.setdefault("reset_votes", [])
         return data
@@ -167,6 +170,18 @@ def add_pending_consumption(data, person, eggs, submitter):
     save_data(data)
 
 
+def add_pending_deletion(data, consumption_item, requester):
+    entry = {
+        "person": consumption_item.get("person"),
+        "eggs": consumption_item.get("eggs"),
+        "date": consumption_item.get("date"),
+        "requester": requester,
+        "approvals": [],
+    }
+    data.setdefault("pending_deletions", []).append(entry)
+    save_data(data)
+
+
 @app.route("/")
 def index():
     data = load_data()
@@ -177,6 +192,7 @@ def index():
     pending = [p for p in data.get("people", []) if p not in reset_votes]
     pending_purchases = data.get("pending_purchases", [])
     pending_consumptions = data.get("pending_consumptions", [])
+    pending_deletions = data.get("pending_deletions", [])
     return render_template(
         "index.html",
         data=data,
@@ -187,6 +203,7 @@ def index():
         pending=pending,
         pending_purchases=pending_purchases,
         pending_consumptions=pending_consumptions,
+        pending_deletions=pending_deletions,
     )
 
 
@@ -222,8 +239,17 @@ def login():
             return redirect(url_for("login"))
 
         stored = users.get(person)
-        # first-time set PIN: if stored is None, accept and save hashed PIN
+        # first-time set PIN: if stored is None, handle default or provided PIN
         if stored is None:
+            # allow a default starter PIN of '0000' — save it and force immediate change
+            if pin == "0000":
+                users[person] = generate_password_hash("0000")
+                data["users"] = users
+                save_data(data)
+                session["user"] = person
+                flash("Default PIN used — please change your PIN now.", "warning")
+                return redirect(url_for("change_pin"))
+            # otherwise accept the provided PIN as first-time set
             users[person] = generate_password_hash(pin)
             data["users"] = users
             save_data(data)
@@ -423,6 +449,67 @@ def consume_approve(idx):
     save_data(data)
     flash("Consumption approved and recorded.", "success")
     return redirect(url_for("index"))
+
+
+@app.route('/consumption/delete/<int:idx>', methods=['POST'])
+@login_required
+def delete_consumption(idx):
+    data = load_data()
+    consumptions = data.get('consumptions', [])
+    if idx < 0 or idx >= len(consumptions):
+        flash('Invalid consumption entry.', 'danger')
+        return redirect(url_for('index'))
+    item = consumptions[idx]
+    user = g.user
+    # only the person who consumed can delete immediately
+    if user == item.get('person'):
+        consumptions.pop(idx)
+        data['consumptions'] = consumptions
+        save_data(data)
+        flash('Consumption entry deleted.', 'success')
+        return redirect(url_for('index'))
+
+    # otherwise create a pending deletion request requiring the person's approval
+    add_pending_deletion(data, item, user)
+    flash('Deletion requested. Awaiting approval from the person who consumed.', 'warning')
+    return redirect(url_for('index'))
+
+
+@app.route('/consumption/delete/approve/<int:pending_idx>', methods=['POST'])
+@login_required
+def approve_consumption_deletion(pending_idx):
+    data = load_data()
+    pending = data.get('pending_deletions', [])
+    if pending_idx < 0 or pending_idx >= len(pending):
+        flash('Invalid pending deletion.', 'danger')
+        return redirect(url_for('index'))
+    item = pending[pending_idx]
+    user = g.user
+    # only the person who consumed can approve deletion
+    if user != item.get('person'):
+        flash('Only the person who consumed can approve deletion.', 'danger')
+        return redirect(url_for('index'))
+
+    # find matching consumption entry by person/date/eggs and remove first match
+    consumptions = data.get('consumptions', [])
+    match_idx = None
+    for i, c in enumerate(consumptions):
+        if c.get('person') == item.get('person') and c.get('date') == item.get('date') and c.get('eggs') == item.get('eggs'):
+            match_idx = i
+            break
+
+    if match_idx is not None:
+        consumptions.pop(match_idx)
+        data['consumptions'] = consumptions
+        flash('Consumption entry deleted after approval.', 'success')
+    else:
+        flash('Matching consumption record not found; it may have been removed already.', 'info')
+
+    # remove pending request
+    pending.pop(pending_idx)
+    data['pending_deletions'] = pending
+    save_data(data)
+    return redirect(url_for('index'))
 
 
 @app.route("/history")

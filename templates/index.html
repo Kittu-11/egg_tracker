@@ -163,12 +163,57 @@
               </ul>
             </div>
           {% endif %}
+          {% if data.get('pending_deletions') %}
+            <div class="mb-3">
+              <h6 class="mb-2">Pending deletion requests</h6>
+              <ul class="list-group list-group-flush">
+                {% for pd in data.get('pending_deletions') %}
+                  <li class="list-group-item py-2">
+                    {{ pd.date }} — <strong>{{ pd.person }}</strong> (deletion requested by {{ pd.requester }}) — {{ pd.eggs }} eggs
+                    <div class="mt-2">
+                      {% if g.user and g.user == pd.person %}
+                        <form method="post" action="{{ url_for('approve_consumption_deletion', pending_idx=loop.index0) }}" style="display:inline-block;">
+                          <button class="btn btn-sm btn-outline-success">Approve deletion</button>
+                        </form>
+                      {% else %}
+                        <small class="text-muted">Waiting for person's approval</small>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
           {% if recent_consumptions %}
             <ul class="list-group list-group-flush">
               {% for record in recent_consumptions %}
-                <li class="list-group-item py-2">
-                  {{ record.date }}<br>
-                  <strong>{{ record.person }}</strong> ate {{ record.eggs }} eggs
+                {% set orig_idx = (data.consumptions | length) - loop.index0 - 1 %}
+                <li class="list-group-item py-2 d-flex justify-content-between align-items-start">
+                  <div>
+                    {{ record.date }}<br>
+                    <strong>{{ record.person }}</strong> ate {{ record.eggs }} eggs
+                  </div>
+                  <div>
+                    {% if g.user and g.user == record.person %}
+                      <form method="post" action="{{ url_for('delete_consumption', idx=orig_idx) }}" style="display:inline-block;">
+                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                      </form>
+                    {% elif g.user and g.user != record.person %}
+                      {% set already_requested = false %}
+                      {% for pd in data.get('pending_deletions', []) %}
+                        {% if pd.person == record.person and pd.date == record.date and pd.eggs == record.eggs %}
+                          {% set already_requested = true %}
+                        {% endif %}
+                      {% endfor %}
+                      {% if already_requested %}
+                        <small class="text-muted">Deletion requested</small>
+                      {% else %}
+                        <form method="post" action="{{ url_for('delete_consumption', idx=orig_idx) }}" style="display:inline-block;">
+                          <button class="btn btn-sm btn-outline-warning">Request delete</button>
+                        </form>
+                      {% endif %}
+                    {% endif %}
+                  </div>
                 </li>
               {% endfor %}
             </ul>
