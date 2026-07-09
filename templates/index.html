@@ -151,11 +151,14 @@
                     {{ c.date }} — <strong>{{ c.person }}</strong> (submitted by {{ c.submitter }}) — {{ c.eggs }} eggs
                     <div class="mt-2">
                       {% if g.user and g.user == c.person %}
-                        <form method="post" action="{{ url_for('consume_approve', idx=loop.index0) }}" style="display:inline-block;">
+                        <form method="post" action="{{ url_for('consume_approve', idx=loop.index0) }}" style="display:inline-flex; gap:0.5rem; align-items:center;">
                           <button class="btn btn-sm btn-outline-success">Approve</button>
                         </form>
+                        <form method="post" action="{{ url_for('consume_reject', idx=loop.index0) }}" style="display:inline-block;">
+                          <button class="btn btn-sm btn-outline-danger">Reject</button>
+                        </form>
                       {% else %}
-                        <small class="text-muted">Only the person can approve</small>
+                        <small class="text-muted">Only the person can approve or reject</small>
                       {% endif %}
                     </div>
                   </li>

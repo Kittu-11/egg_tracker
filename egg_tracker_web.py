@@ -451,6 +451,25 @@ def consume_approve(idx):
     return redirect(url_for("index"))
 
 
+@app.route('/consume/reject/<int:idx>', methods=['POST'])
+@login_required
+def consume_reject(idx):
+    data = load_data()
+    pending = data.get("pending_consumptions", [])
+    if idx < 0 or idx >= len(pending):
+        flash("Invalid pending consumption.", "danger")
+        return redirect(url_for("index"))
+    item = pending[idx]
+    user = g.user
+    if user != item.get("person"):
+        flash("Only the person who consumed can reject this record.", "danger")
+        return redirect(url_for("index"))
+    pending.pop(idx)
+    save_data(data)
+    flash("Pending consumption rejected and removed.", "info")
+    return redirect(url_for("index"))
+
+
 @app.route('/consumption/delete/<int:idx>', methods=['POST'])
 @login_required
 def delete_consumption(idx):
