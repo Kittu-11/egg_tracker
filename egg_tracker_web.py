@@ -166,6 +166,8 @@ def add_pending_purchase(data, buyer, eggs, cost, date_text, submitter):
         "cost": cost,
         "date": date_text or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "approvals": [],
+        "declines": [],
+        "status": "pending",
         "submitter": submitter,
     }
     data.setdefault("pending_purchases", []).append(entry)
@@ -397,19 +399,45 @@ def purchase_approve(idx):
         return redirect(url_for("index"))
     item = pending[idx]
     user = g.user
-    if user in item.get("approvals", []):
-        flash("You already approved this purchase.", "info")
+    if item.get("status") != "pending":
+        flash(f"This purchase has already been {item.get('status')}.", "info")
+        return redirect(url_for("index"))
+    if user in item.get("approvals", []) or user in item.get("declines", []):
+        flash("You have already responded to this purchase.", "info")
         return redirect(url_for("index"))
     item.setdefault("approvals", []).append(user)
     people_count = len(data.get("people", []))
     if len(item["approvals"]) >= people_count:
-        # move to confirmed purchases
+        item["status"] = "approved"
         data.setdefault("purchases", []).append({k: item[k] for k in ("buyer", "eggs", "cost", "date")})
         pending.pop(idx)
         flash("Purchase approved by all and recorded.", "success")
     else:
         flash(f"{user} approved the purchase. Waiting for others.", "warning")
     save_data(data)
+    return redirect(url_for("index"))
+
+
+@app.route("/purchase/reject/<int:idx>", methods=["POST"])
+@login_required
+def purchase_reject(idx):
+    data = load_data()
+    pending = data.get("pending_purchases", [])
+    if idx < 0 or idx >= len(pending):
+        flash("Invalid pending purchase.", "danger")
+        return redirect(url_for("index"))
+    item = pending[idx]
+    user = g.user
+    if item.get("status") != "pending":
+        flash(f"This purchase has already been {item.get('status')}.", "info")
+        return redirect(url_for("index"))
+    if user in item.get("approvals", []) or user in item.get("declines", []):
+        flash("You have already responded to this purchase.", "info")
+        return redirect(url_for("index"))
+    item.setdefault("declines", []).append(user)
+    item["status"] = "rejected"
+    save_data(data)
+    flash("Purchase declined and marked rejected.", "info")
     return redirect(url_for("index"))
 
 

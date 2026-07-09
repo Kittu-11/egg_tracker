@@ -112,12 +112,25 @@
                   <li class="list-group-item py-2">
                     {{ p.date }} — <strong>{{ p.buyer }}</strong> submitted {{ p.eggs }} eggs for ₹{{ p.cost | round(2) }}
                     <div class="mt-2">
-                      {% if g.user %}
-                        <form method="post" action="{{ url_for('purchase_approve', idx=loop.index0) }}" style="display:inline-block;">
-                          <button class="btn btn-sm btn-outline-success">Approve</button>
-                        </form>
+                      {% if p.get('status') == 'approved' %}
+                        <span class="badge bg-success">✓ Approved</span>
+                      {% elif p.get('status') == 'rejected' %}
+                        <span class="badge bg-danger">✗ Rejected</span>
+                      {% elif g.user %}
+                        {% if g.user in p.get('approvals', []) %}
+                          <span class="badge bg-success">You approved</span>
+                        {% elif g.user in p.get('declines', []) %}
+                          <span class="badge bg-danger">You declined</span>
+                        {% else %}
+                          <form method="post" action="{{ url_for('purchase_approve', idx=loop.index0) }}" style="display:inline-flex; gap:0.5rem; align-items:center;">
+                            <button class="btn btn-sm btn-outline-success">Approve</button>
+                          </form>
+                          <form method="post" action="{{ url_for('purchase_reject', idx=loop.index0) }}" style="display:inline-block;">
+                            <button class="btn btn-sm btn-outline-danger">Reject</button>
+                          </form>
+                        {% endif %}
                       {% else %}
-                        <small class="text-muted">Login to approve</small>
+                        <small class="text-muted">Login to approve or reject</small>
                       {% endif %}
                     </div>
                   </li>
