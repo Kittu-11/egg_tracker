@@ -57,6 +57,7 @@ def load_data():
             save_data(data)
         data.setdefault("pending_purchases", [])
         data.setdefault("pending_consumptions", [])
+        data.setdefault("admins", [])
         data.setdefault("reset_votes", [])
         return data
 
@@ -242,6 +243,44 @@ def login():
         flash("Invalid name or PIN.", "danger")
 
     return render_template("login.html", data=data)
+
+
+@app.route("/reset_pin", methods=["POST"])
+def reset_pin():
+    data = load_data()
+    person = request.form.get("person")
+    current = request.form.get("current_pin")
+    new = request.form.get("new_pin")
+    confirm = request.form.get("confirm_pin")
+
+    if not person or not current or not new:
+        flash("Please provide person, current PIN and new PIN.", "danger")
+        return redirect(url_for("login"))
+
+    if new != confirm:
+        flash("New PINs do not match.", "danger")
+        return redirect(url_for("login"))
+
+    users = data.get("users", {})
+    stored = users.get(person)
+    if stored is None:
+        flash("No existing PIN for this user — use first-time login to set a PIN.", "danger")
+        return redirect(url_for("login"))
+
+    try:
+        if check_password_hash(stored, current):
+            users[person] = generate_password_hash(new)
+            data["users"] = users
+            save_data(data)
+            # optionally log the user in after reset
+            session["user"] = person
+            flash("PIN updated successfully and logged in.", "success")
+            return redirect(url_for("index"))
+    except Exception:
+        pass
+
+    flash("Current PIN is incorrect.", "danger")
+    return redirect(url_for("login"))
 
 
 @app.route("/logout")

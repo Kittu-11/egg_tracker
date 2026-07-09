@@ -9,11 +9,12 @@
   "consumptions": [],
   "reset_votes": [],
   "users": {
-    "prem": "scrypt:32768:8:1$rj0q3n1JVuDZr5ZZ$1e16d44aad7e440c815a8c165881c9c5fb860adb9a0bd3fb77875bccc853884966cf23d86485056ddac9d6389e2e2daad9687107ea51c39268477edf607ec5e4",
-    "tharun": "scrypt:32768:8:1$WOc85YGYQvop3sbV$a93a3630d9d9128af11670b0370142d4d0c3e91867f62b8e7b5631e4dc2ce5ee880e736b07f3402a19e5db0df2b095951d5931caf9b81df696d12824024e72f0",
-    "rakesh": "scrypt:32768:8:1$G9FCJMf5N9j4iqJm$4a49dbfff0f674fb21fbcc1062f3118288c535fbbdddee37012f09d22b7e5ac3b7c2c4e1ba8bd7d343600966427eada4a4897b61838792f0c75b1b5284e38b28",
-    "saikiran": "scrypt:32768:8:1$MxRX0R72HuWFTJpj$ed73c66288831b2e2b0ce0e99f5ad393de6f38e8a4812874ee9c5bd435e9732b338fbcb432e11777936b197da3df75233b3319250d4269fa3117a3b971c31d4e"
+    "prem": null,
+    "tharun": null,
+    "rakesh": null,
+    "saikiran": null
   },
+  "admins": ["prem"],
   "pending_purchases": [],
   "pending_consumptions": [
     {
