@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <h2 class="card-title">Login</h2>
+          <p class="text-muted">Select your name and enter your PIN.</p>
+          <form method="post" action="{{ url_for('login') }}">
+            <div class="mb-3">
+              <label class="form-label">Person</label>
+              <select class="form-select" name="person" required>
+                <option value="" selected disabled>Select</option>
+                {% for person in data.people %}
+                  <option value="{{ person }}">{{ person }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">PIN</label>
+              <input type="password" class="form-control" name="pin" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

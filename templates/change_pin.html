@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <h2 class="card-title">Change PIN</h2>
+          <p class="text-muted">Enter your current PIN and choose a new one.</p>
+          <form method="post" action="{{ url_for('change_pin') }}">
+            <div class="mb-3">
+              <label class="form-label">Current PIN</label>
+              <input type="password" class="form-control" name="current" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">New PIN</label>
+              <input type="password" class="form-control" name="new" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Confirm new PIN</label>
+              <input type="password" class="form-control" name="confirm" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Change PIN</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
