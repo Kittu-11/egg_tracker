@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from functools import wraps
+from io import BytesIO
 
 from flask import (
     Flask,
@@ -12,6 +13,7 @@ from flask import (
     flash,
     session,
     g,
+    send_file,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -66,8 +68,20 @@ def load_data():
 
 
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
+    try:
+        # create backup before saving
+        if os.path.exists(DATA_FILE):
+            backup_file = DATA_FILE.replace(".json", ".backup.json")
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                backup_data = f.read()
+            with open(backup_file, "w", encoding="utf-8") as f:
+                f.write(backup_data)
+        # save new data
+        with open(DATA_FILE, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2)
+    except Exception as e:
+        print(f"Error saving data: {e}")
+        raise
 
 
 def login_required(f):
@@ -443,8 +457,10 @@ def consume_approve(idx):
     if user != item.get("person"):
         flash("Only the person who consumed can approve this record.", "danger")
         return redirect(url_for("index"))
-    # mark as approved
+    # mark as approved and move to confirmed consumptions
     item["status"] = "approved"
+    confirmed_entry = {k: item[k] for k in ("person", "eggs", "date")}
+    data.setdefault("consumptions", []).append(confirmed_entry)
     save_data(data)
     flash("Consumption approved and recorded.", "success")
     return redirect(url_for("index"))
@@ -463,8 +479,10 @@ def consume_reject(idx):
     if user != item.get("person"):
         flash("Only the person who consumed can reject this record.", "danger")
         return redirect(url_for("index"))
-    # mark as rejected
+    # mark as rejected and remove from pending
     item["status"] = "rejected"
+    pending[idx] = item
+    data["pending_consumptions"] = pending
     save_data(data)
     flash("Pending consumption rejected.", "info")
     return redirect(url_for("index"))
@@ -591,6 +609,21 @@ def force_pin_reset():
     save_data(data)
     flash("All users will be required to set new PINs on next login.", "success")
     return redirect(url_for("people"))
+
+
+@app.route("/download_data")
+@login_required
+def download_data():
+    """Download egg_data.json for backup."""
+    data = load_data()
+    json_str = json.dumps(data, indent=2)
+    bytes_io = BytesIO(json_str.encode('utf-8'))
+    return send_file(
+        bytes_io,
+        mimetype='application/json',
+        as_attachment=True,
+        download_name=f'egg_data_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+    )
 
 
 if __name__ == "__main__":

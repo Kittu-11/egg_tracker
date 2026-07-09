@@ -90,7 +90,10 @@
           <h3 class="card-title">Quick links</h3>
           <a href="{{ url_for('purchase') }}" class="btn btn-outline-primary w-100 mb-2">Add purchase</a>
           <a href="{{ url_for('history') }}" class="btn btn-outline-secondary w-100 mb-2">View history</a>
-          <a href="{{ url_for('people') }}" class="btn btn-outline-secondary w-100">Update people</a>
+          <a href="{{ url_for('people') }}" class="btn btn-outline-secondary w-100 mb-2">Update people</a>
+          {% if g.user %}
+            <a href="{{ url_for('download_data') }}" class="btn btn-outline-info w-100">Backup data</a>
+          {% endif %}
         </div>
       </div>
     </div>
